@@ -22,7 +22,7 @@
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
         <scala.sourceDirectory>src/main/scala</scala.sourceDirectory>
         <scala.testSourceDirectory>src/test/scala</scala.testSourceDirectory>
-        <package.mainClass>com.wzx.mock.Uploader</package.mainClass>
+        <package.mainClass>com.wzx.mock.Upload2Kafka</package.mainClass>
     </properties>
 
     <dependencies>
@@ -30,7 +30,6 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -85,9 +84,9 @@
         </dependency>
 
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <groupId>com.lihaoyi</groupId>
+            <artifactId>utest_2.11</artifactId>
+            <version>0.7.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>
