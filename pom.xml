@@ -14,7 +14,7 @@
         <scala.version>2.11.12</scala.version>
         <spark.version>2.4.0</spark.version>
         <kafka.version>2.4.1</kafka.version>
-        <flink.version>1.11.0</flink.version>
+        <flink.version>1.9.0</flink.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -23,6 +23,7 @@
         <scala.sourceDirectory>src/main/scala</scala.sourceDirectory>
         <scala.testSourceDirectory>src/test/scala</scala.testSourceDirectory>
         <package.mainClass>com.wzx.mock.Upload2Kafka</package.mainClass>
+        <skipTests>false</skipTests>
     </properties>
 
     <dependencies>
@@ -30,6 +31,7 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -57,12 +59,38 @@
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-kafka_${scala.tool.version}</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.typesafe</groupId>
             <artifactId>config</artifactId>
             <version>1.4.1</version>
         </dependency>
+        <dependency>
+            <groupId>io.lemonlabs</groupId>
+            <artifactId>scala-uri_${scala.tool.version}</artifactId>
+            <version>1.4.10</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ggstar</groupId>
+            <artifactId>ipdatabase</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>3.14</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>3.14</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -84,15 +112,21 @@
         </dependency>
 
         <dependency>
-            <groupId>com.lihaoyi</groupId>
-            <artifactId>utest_2.11</artifactId>
-            <version>0.7.5</version>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest_${scala.tool.version}</artifactId>
+            <version>3.2.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-test-utils_${scala.tool.version}</artifactId>
+            <version>${flink.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.holdenkarau</groupId>
-            <artifactId>spark-testing-base_2.11</artifactId>
-            <version>2.1.0_0.9.0</version>
+            <artifactId>spark-testing-base_${scala.tool.version}</artifactId>
+            <version>${spark.version}_0.12.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -122,22 +156,35 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- disable surefire-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.13</version>
+                <version>2.7</version>
                 <configuration>
-                    <useFile>false</useFile>
-                    <disableXmlReport>true</disableXmlReport>
-                    <!-- If you have classpath issue like NoDefClassError,... -->
-                    <!-- useManifestOnlyJar>false</useManifestOnlyJar -->
-                    <includes>
-                        <include>**/*Test.*</include>
-                        <include>**/*Suite.*</include>
-                    </includes>
+                    <skipTests>true</skipTests>
                 </configuration>
             </plugin>
-
+            <!-- enable scalatest -->
+            <plugin>
+                <groupId>org.scalatest</groupId>
+                <artifactId>scalatest-maven-plugin</artifactId>
+                <version>1.0</version>
+                <configuration>
+                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                    <junitxml>.</junitxml>
+                    <filereports>WDF TestSuite.txt</filereports>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--make jar-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -165,6 +212,11 @@
     </build>
 
     <repositories>
+        <repository>
+            <id>in-project</id>
+            <name>In Project Repo</name>
+            <url>file://${project.basedir}/lib</url>
+        </repository>
         <repository>
             <id>alimaven</id>
             <name>aliyun maven</name>
