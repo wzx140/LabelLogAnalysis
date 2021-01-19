@@ -5,6 +5,6 @@ case class Profile(
     ip: String,
     // 用户城市
     city: String,
-    // 注册时间
-    registerDay: String
+    // 注册日期
+    register_day: String
 )

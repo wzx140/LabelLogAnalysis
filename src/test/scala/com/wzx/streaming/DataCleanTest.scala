@@ -9,7 +9,6 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-
 import scala.collection.mutable.ArrayBuffer
 
 class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
@@ -45,7 +44,7 @@ class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
       "117.35.88.11 - - [10/Nov/2016:00:01:02 +0800] \"GET /article/ajaxcourserecommends?id=124 HTTP/1.1\" 200 2345 \"www.imooc.com\" xxxdf/d.f - \"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36\" \"-\" 10.100.136.65:80 200 0.616 0.616"
     )
     val extractedDataStream = DataClean.dataExtract(dataStream)
-    extractedDataStream.addSink(new StringTupleSink())
+    extractedDataStream.addSink(new StringTupleSink)
     env.execute()
 
     StringTupleSink.values should equal(
@@ -77,7 +76,7 @@ class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
     )
     DataClean
       .dataFormat(DataClean.dataExtract(dataStream))
-      .addSink(new EventSink())
+      .addSink(new EventSink)
     env.execute()
 
     val list = EventSink.values
@@ -89,9 +88,10 @@ class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
         5915,
         54,
         "113.140.11.123",
-        "陕西省",
         "2016-11-10 00:01:02",
-        "2016-11-10"
+        2016,
+        11,
+        10
       )
     )
     list should contain(
@@ -101,9 +101,10 @@ class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
         75,
         2152,
         "125.119.9.35",
-        "浙江省",
         "2016-11-10 00:01:02",
-        "2016-11-10"
+        2016,
+        11,
+        10
       )
     )
     list should contain(
@@ -113,9 +114,10 @@ class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
         175,
         7228,
         "58.241.76.18",
-        "江苏省",
         "2016-11-10 00:01:02",
-        "2016-11-10"
+        2016,
+        11,
+        10
       )
     )
     list should contain(
@@ -125,12 +127,12 @@ class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
         11325,
         271,
         "199.30.25.88",
-        "全球",
         "2016-11-10 00:01:03",
-        "2016-11-10"
+        2016,
+        11,
+        10
       )
     )
-
   }
 }
 

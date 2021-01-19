@@ -12,7 +12,7 @@ if command == 'describe':
     os.system(f"kafka-topics --zookeeper {zookeeper_list} --describe")
 elif command == 'create':
     os.system(
-        f"kafka-topics --create --zookeeper {zookeeper_list} --replication-factor 1 --partitions 3 --topic weblogs")
+        f"kafka-topics --create --zookeeper {zookeeper_list} --replication-factor 1 --partitions 2 --topic weblogs")
 elif command == 'delete':
     os.system(f"kafka-topics --zookeeper {zookeeper_list} --delete --topic weblogs")
 elif command == 'console':

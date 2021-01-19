@@ -3,41 +3,46 @@
 2. 在CDH中添加Flink, HDFS, Hive, Kafka, Kudu, Spark, YARN, ZooKeeper
 3. 编译zeppelin与livy的parcels和csd, 参考[livy_zeppelin_cdh_csd_parcels](https://github.com/alexjbush/livy_zeppelin_cdh_csd_parcels)
 4. zeppelin与livy与CDH集成，参考[博客](https://www.itocm.com/a/3C84D18AE81B46BC80CF4AB64C8159F6)
+5. [编译Flink Kudu Connector](https://github.com/apache/bahir-flink)
 
 ## 功能
-- 实时用户标签
+- 实时etl
 - 离线用户标签
 - olap分析
-- bitmap优化标签join
 
 ## 架构
-- etl: mock -> kafka -> flink -> kudu
-- 实时标签: kafka -> flink -> kudu
+- 实时etl: mock -> kafka -> flink -> kudu
 - 离线标签: crontab -> spark -> hive
-- kudu sink: crontab -> kudu -> spark -> hive
-- spark udf: bitmap_filter(col, label...)
+- kudu sink: crontab -> impala sql -> hive
 
 ## 集群配置
 - master
     - Mysql
     - HDFS NameNode
     - HDFS SecondaryNameNode
-    - HDFS DataNode
-    - Kafka Broker 
-    - Hive Metastore Server
-    - HiveServer2
+    - ZooKeeper Server
     - Kudu Master
     - YARN Resource Manager
+    - Hive Metastore Server
+    - HiveServer2
+    - Livy REST Server
+    - Zeppelin Server
+    - Impala Catalog Server
+    - Impala StateStore
 - slave1:
     - HDFS DataNode
     - Kafka Broker
     - YARN Node Manager
     - Kudu Tablet Server
+    - ZooKeeper Server
+    - Impala Daemon
 - slave2:
     - HDFS DataNode
     - Kafka Broker
     - YARN Node Manager
     - Kudu Tablet Server
+    - ZooKeeper Server
+    - Impala Daemon
   
 ## 日志格式
 ```
@@ -47,3 +52,6 @@
 
 百度云盘下载地址：链接：https://pan.baidu.com/s/1VfOG14mGW4P4kj20nzKx8g 提取码：uwjg
 
+## 表
+- WOS: Write Optimized Store(kudu)
+- ROS: Read Optimized Store(parquet)

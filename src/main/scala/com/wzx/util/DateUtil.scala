@@ -29,7 +29,7 @@ object DateUtil {
     LINE_TIME_FORMAT.format(dateTime)
   }
 
-  def getDay(dateTime: LocalDateTime): String = {
+  def formatDay(dateTime: LocalDateTime): String = {
     DAY_FORMAT.format(dateTime)
   }
 }

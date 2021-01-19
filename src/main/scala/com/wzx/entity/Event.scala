@@ -4,17 +4,19 @@ case class Event(
     // url
     url: String,
     // 访问类型
-    cmsType: String,
+    cms_type: String,
     // 访问类型对应的编号
-    cmsId: Int,
+    cms_id: Long,
     // 流量
-    traffic: Int,
+    traffic: Long,
     // 用户ip
     ip: String,
-    // 用户城市
-    city: String,
     // yyyy-MM-dd HH:mm:ss
     time: String,
-    // yyyy-MM-dd
-    day: String
+    // yyyy
+    year: Int,
+    // MM
+    month: Int,
+    // dd
+    day: Int
 )

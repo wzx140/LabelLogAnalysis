@@ -1,17 +1,24 @@
 package com.wzx.streaming
 
-import com.ggstar.util.ip.IpHelper
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.api.common.serialization.SimpleStringSchema
-import org.apache.flink.streaming.api.scala._
-import org.slf4j.LoggerFactory
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
+import com.wzx.common.{Constant, FilePath, TableName}
+import com.wzx.entity.{Event, Profile}
 import com.wzx.util.DateUtil
-
+import io.lemonlabs.uri.Url
+import org.apache.flink.api.common.serialization.SimpleStringSchema
+import org.apache.flink.connectors.kudu.connector.KuduTableInfo
+import org.apache.flink.connectors.kudu.connector.writer.{
+  AbstractSingleOperationMapper,
+  KuduWriterConfig,
+  PojoOperationMapper
+}
+import org.apache.flink.connectors.kudu.streaming.KuduSink
+import org.apache.flink.runtime.state.filesystem.FsStateBackend
+import org.apache.flink.streaming.api.CheckpointingMode
+import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
+import org.slf4j.LoggerFactory
 import java.util.Properties
-import com.wzx.common.Constant
-import com.wzx.entity.Event
-import io.lemonlabs.uri.{Host, Url}
 
 object DataClean {
   private val name = this.getClass.getName.stripSuffix("$")
@@ -34,7 +41,9 @@ object DataClean {
     )
   }
 
-  def dataExtract(stream: DataStream[String]) = {
+  def dataExtract(
+      stream: DataStream[String]
+  ): DataStream[(String, String, String, String)] = {
     stream
       .map { line =>
         val splits = line.split(" ")
@@ -87,17 +96,19 @@ object DataClean {
       .filter(_._2 != "10.100.0.1")
   }
 
-  def dataFormat(stream: DataStream[(String, String, String, String)]) =
+  def dataFormat(
+      stream: DataStream[(String, String, String, String)]
+  ): DataStream[Event] =
     stream.map { data =>
       val time = DateUtil.parseSlashFormat(data._1)
       val ip = data._2
       val url = data._3
-      val traffic = data._4.toInt
+      val traffic = data._4.toLong
 
       // parse cms type and id
       // http://www.imooc.com/code/547   ===>  code/547  547
       var cmsType = ""
-      var cmsId = -1
+      var cmsId = -1L
       val paths = Url.parse(url).path.toRootless.parts.toArray
       if (paths.length < 2) {
         log.warn(s"can not recognize cms: $url")
@@ -113,28 +124,85 @@ object DataClean {
         }
 
         try {
-          cmsId = paths(1).toInt
+          cmsId = paths(1).toLong
         } catch {
-          case e: java.lang.NumberFormatException =>
+          case _: java.lang.NumberFormatException =>
             log.warn(s"can not recognize cms id: $url")
         }
       }
-      // parse ip
-      val city = IpHelper.findRegionByIp(ip)
-      val day = DateUtil.getDay(time)
 
-      Event(url, cmsType, cmsId, traffic, ip, city, DateUtil.formatLine(time), day)
+      Event(
+        url,
+        cmsType,
+        cmsId,
+        traffic,
+        ip,
+        DateUtil.formatLine(time),
+        time.getYear,
+        time.getMonth.getValue,
+        time.getDayOfMonth
+      )
     }
 
-  def profileExtract(): Unit = {}
+  private def eventSink(stream: DataStream[Event]) = {
+    val writerConfig = KuduWriterConfig.Builder
+      .setMasters(config.getString("db.kudu.master_url"))
+      .build
+    val sink = new KuduSink[Event](
+      writerConfig,
+      KuduTableInfo.forTable(TableName.EVENT_WOS),
+      new PojoOperationMapper[Event](
+        classOf[Event],
+        Array[String](
+          "url",
+          "cms_type",
+          "cms_id",
+          "traffic",
+          "ip",
+          "time",
+          "year",
+          "month",
+          "day"
+        ),
+        AbstractSingleOperationMapper.KuduOperation.INSERT
+      )
+    )
+    stream.addSink(sink)
+  }
+
+  private def profileSink(stream: DataStream[Profile]) = {
+    val writerConfig = KuduWriterConfig.Builder
+      .setMasters(config.getString("db.kudu.master_url"))
+      .build
+    val sink = new KuduSink[Profile](
+      writerConfig,
+      KuduTableInfo.forTable(TableName.EVENT_WOS),
+      new PojoOperationMapper[Profile](
+        classOf[Profile],
+        Array[String]("ip", "city", "register_day"),
+        AbstractSingleOperationMapper.KuduOperation.INSERT
+      ),
+      new LogFailureHandler(log)
+    )
+    stream.addSink(sink)
+  }
 
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
-//    env.enableCheckpointing(5000, CheckpointingMode.EXACTLY_ONCE)
+    env.setStateBackend(
+      new FsStateBackend(FilePath.PROFILE_BACKEND_PATH)
+    )
+    env.enableCheckpointing(5000, CheckpointingMode.EXACTLY_ONCE)
     val producer = initProducer()
     val stream = env.addSource(producer)
     val extractedDataStream = dataExtract(stream)
     val formattedDataStream = dataFormat(extractedDataStream)
+    eventSink(formattedDataStream)
+    profileSink(
+      formattedDataStream
+        .keyBy(_.ip)
+        .flatMap(new ProfileMapper)
+    )
 
     env.execute(name)
   }
