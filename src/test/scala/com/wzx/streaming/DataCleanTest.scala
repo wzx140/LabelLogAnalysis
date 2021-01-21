@@ -4,14 +4,12 @@ import com.wzx.entity.Event
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.test.util.MiniClusterWithClientResource
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import scala.collection.mutable.ArrayBuffer
 
-class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
+class DataCleanTest extends FunSuite with BeforeAndAfter with Matchers {
 
   val flinkCluster = new MiniClusterWithClientResource(
     new MiniClusterResourceConfiguration.Builder()
@@ -31,7 +29,7 @@ class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
   test("dataExtract") {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
-    // configure your test environment
+    // configure your log4j.properties environment
     env.setParallelism(1)
 
     // values are collected in a static variable
@@ -62,7 +60,7 @@ class DataCleanTest extends AnyFunSuite with BeforeAndAfter with Matchers {
   test("dataFormat") {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
-    // configure your test environment
+    // configure your log4j.properties environment
     env.setParallelism(1)
 
     // values are collected in a static variable

@@ -1,3 +1,5 @@
+-- noinspection SqlDialectInspectionForFile
+
 CREATE TABLE `event_wos`
 (
     `ip`       STRING COMMENT '用户ip',
@@ -52,11 +54,20 @@ CREATE TABLE `event_ros`
     `day`      SMALLINT COMMENT 'dd')
 STORED AS PARQUET;
 
-CREATE TABLE `user_tag_ros`
+--近一周新注册
+CREATE TABLE `user_tag_1_ros`
 (
-    `ip`             STRING COMMENT '用户ip',
-    `week_register`  BOOLEAN COMMENT '近一周新注册',
-    `video_over_100` BOOLEAN COMMENT '当天video访问量超过100'
+    `ip`             STRING COMMENT '用户ip'
+) PARTITION BY(
+    `year`     SMALLINT COMMENT 'yyyy',
+    `month`    SMALLINT COMMENT 'MM',
+    `day`      SMALLINT COMMENT 'dd')
+STORED AS PARQUET;
+
+--当天video访问量超过100
+CREATE TABLE `user_tag_2_ros`
+(
+    `ip`             STRING COMMENT '用户ip'
 ) PARTITION BY(
     `year`     SMALLINT COMMENT 'yyyy',
     `month`    SMALLINT COMMENT 'MM',

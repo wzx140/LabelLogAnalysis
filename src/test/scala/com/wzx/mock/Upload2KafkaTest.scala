@@ -1,13 +1,13 @@
 package com.wzx.mock
 
-import org.scalatest.funsuite.AnyFunSuite
 import collection.JavaConverters._
 import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.scalatest.matchers.should.Matchers
+import org.scalatest.{FunSuite, Matchers}
+
 import scala.collection.mutable.ArrayBuffer
 
-class Upload2KafkaTest extends AnyFunSuite with Matchers {
+class Upload2KafkaTest extends FunSuite with Matchers {
 
   test("mock2kafka") {
     val recoursePath = this.getClass.getResource("/mock_data").getPath

@@ -1,22 +1,16 @@
 package com.wzx.streaming
 
 import com.wzx.entity.{Event, Profile}
-import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.streaming.api.operators.StreamFlatMap
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
-import org.apache.flink.streaming.util.{
-  KeyedOneInputStreamOperatorTestHarness,
-  OneInputStreamOperatorTestHarness
-}
-import org.scalactic.source.TypeInfo
-import org.scalatest.BeforeAndAfter
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness
+import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 
 import collection.JavaConverters._
 
-class ProfileMapperTest extends AnyFunSuite with BeforeAndAfter with Matchers {
+class ProfileMapperTest extends FunSuite with BeforeAndAfter with Matchers {
   private var testHarness
       : KeyedOneInputStreamOperatorTestHarness[String, Event, Profile] = _
   private var statefulFlatMap: ProfileMapper = _
@@ -36,7 +30,7 @@ class ProfileMapperTest extends AnyFunSuite with BeforeAndAfter with Matchers {
       TypeInformation.of(classOf[String])
     )
 
-    // open the test harness (will also call open() on RichFunctions)
+    // open the log4j.properties harness (will also call open() on RichFunctions)
     testHarness.open()
   }
 

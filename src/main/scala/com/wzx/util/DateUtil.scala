@@ -1,6 +1,8 @@
 package com.wzx.util
 
-import java.time.LocalDateTime
+import com.wzx.common.FilePath
+
+import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -21,6 +23,10 @@ object DateUtil {
     LocalDateTime.parse(time, LINE_TIME_FORMAT)
   }
 
+  def parseDayFormat(time: String): LocalDateTime = {
+    LocalDate.parse(time, DAY_FORMAT).atStartOfDay()
+  }
+
   def formatSlash(dateTime: LocalDateTime): String = {
     SLASH_TIME_FORMAT.format(dateTime)
   }
@@ -31,5 +37,15 @@ object DateUtil {
 
   def formatDay(dateTime: LocalDateTime): String = {
     DAY_FORMAT.format(dateTime)
+  }
+
+  def formatDateString(
+      src: String,
+      dateTime: LocalDateTime
+  ): String = {
+    src
+      .replaceAll(FilePath.YEAR_PATTERN, dateTime.getYear.toString)
+      .replaceAll(FilePath.MONTH_PATTERN, dateTime.getMonth.getValue.toString)
+      .replaceAll(FilePath.DAY_PATTERN, dateTime.getDayOfMonth.toString)
   }
 }

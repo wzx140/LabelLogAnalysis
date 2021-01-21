@@ -15,6 +15,10 @@
 - 离线标签: crontab -> spark -> hive
 - kudu sink: crontab -> impala sql -> hive
 
+## 离线标签
+- 近一周新注册
+- 当天video访问量超过100
+
 ## 集群配置
 - master
     - Mysql
