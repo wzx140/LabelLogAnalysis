@@ -12,11 +12,5 @@ case class Event(
     // 用户ip
     ip: String,
     // yyyy-MM-dd HH:mm:ss
-    time: String,
-    // yyyy
-    year: Int,
-    // MM
-    month: Int,
-    // dd
-    day: Int
+    time: String
 )

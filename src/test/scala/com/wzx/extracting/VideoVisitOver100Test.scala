@@ -2,10 +2,11 @@ package com.wzx.extracting
 
 import com.holdenkarau.spark.testing.DatasetSuiteBase
 import com.wzx.entity.Event
-import org.scalatest.FunSuite
+import org.scalatest.{FunSuite, Matchers}
+
 import scala.util.Random.shuffle
 
-class VideoVisitOver100Test extends FunSuite with DatasetSuiteBase {
+class VideoVisitOver100Test extends FunSuite with DatasetSuiteBase with Matchers{
 
   test("extract") {
     import sqlContext.implicits._
@@ -17,10 +18,7 @@ class VideoVisitOver100Test extends FunSuite with DatasetSuiteBase {
         5915,
         54,
         "113.140.11.123",
-        "2016-11-10 00:01:02",
-        2016,
-        11,
-        10
+        "2016-11-10 00:01:02"
       )
     ) ++
       List.fill(100)(
@@ -30,10 +28,7 @@ class VideoVisitOver100Test extends FunSuite with DatasetSuiteBase {
           75,
           2152,
           "125.119.9.35",
-          "2016-11-10 00:01:02",
-          2016,
-          11,
-          10
+          "2016-11-10 00:01:02"
         )
       ) ++
       List.fill(99)(
@@ -43,20 +38,17 @@ class VideoVisitOver100Test extends FunSuite with DatasetSuiteBase {
           11325,
           271,
           "199.30.25.88",
-          "2016-11-10 00:01:03",
-          2016,
-          11,
-          10
+          "2016-11-10 00:01:03"
         )
       )
     val inputDS = sc
       .parallelize(shuffle(inputData))
       .toDS()
-    val outputDS = sc
-      .parallelize(List("113.140.11.123"))
-      .toDS()
 
-    val resDS = VideoVisitOver100.extract(inputDS)
-    assertDatasetEquals(outputDS, resDS)
+    val outputDS = VideoVisitOver100.extract(inputDS)
+
+    val output = outputDS.collect()
+    output should have size 1
+    output should contain ("113.140.11.123")
   }
 }

@@ -3,10 +3,11 @@ package com.wzx.extracting
 import com.holdenkarau.spark.testing.DatasetSuiteBase
 import com.wzx.entity.Profile
 import com.wzx.util.DateUtil
-import org.scalatest.FunSuite
+import org.scalatest.{FunSuite, Matchers}
+
 import scala.util.Random.shuffle
 
-class NewRegisterExtractTest extends FunSuite with DatasetSuiteBase {
+class NewRegisterExtractTest extends FunSuite with DatasetSuiteBase with Matchers {
 
   test("extract") {
     import sqlContext.implicits._
@@ -31,16 +32,16 @@ class NewRegisterExtractTest extends FunSuite with DatasetSuiteBase {
     val inputDS = sc
       .parallelize(shuffle(inputData))
       .toDS()
-    val outputDS = sc
-      .parallelize(List("113.140.11.123", "58.241.76.18"))
-      .toDS()
 
-    val resDS = NewRegisterExtract.extract(
+    val outputDS = NewRegisterExtract.extract(
       inputDS,
       DateUtil.parseDayFormat("2016-11-10")
     )
 
-    assertDatasetEquals(resDS, outputDS)
+    val output = outputDS.collect()
+    output should have size 2
+    output should contain ("113.140.11.123")
+    output should contain ("58.241.76.18")
   }
 
 }

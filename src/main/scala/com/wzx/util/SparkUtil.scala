@@ -11,16 +11,13 @@ object SparkUtil {
     rdd.map {
         case Row(
               ip: String,
-              year: Int,
-              month: Int,
-              day: Int,
               time: String,
               url: String,
               cms_type: String,
               cms_id: Long,
               traffic: Long
             ) =>
-          Event(url, cms_type, cms_id, traffic, ip, time, year, month, day)
+          Event(url, cms_type, cms_id, traffic, ip, time)
       }.toDS()
   }
 

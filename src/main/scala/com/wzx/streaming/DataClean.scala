@@ -3,7 +3,6 @@ package com.wzx.streaming
 import com.typesafe.config.ConfigFactory
 import com.wzx.common.{Constant, FilePath, TableName}
 import com.wzx.entity.{Event, Profile}
-import com.wzx.util.DateUtil
 import io.lemonlabs.uri.Url
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.connectors.kudu.connector.KuduTableInfo
@@ -49,8 +48,8 @@ object DataClean {
         val splits = line.split(" ")
         // 0  => 183.162.52.7
         // 1,2 => -
-        // 3  => [10/Nov/2016:00:01:02
-        // 4  => +0800]
+        // 3  => [2016-11-10
+        // 4  => 00:01:02]
         // 5  => "POST
         // 6  => /api3/getadv
         // 7  => HTTP/1.1"
@@ -100,7 +99,7 @@ object DataClean {
       stream: DataStream[(String, String, String, String)]
   ): DataStream[Event] =
     stream.map { data =>
-      val time = DateUtil.parseSlashFormat(data._1)
+      val time = data._1
       val ip = data._2
       val url = data._3
       val traffic = data._4.toLong
@@ -137,10 +136,7 @@ object DataClean {
         cmsId,
         traffic,
         ip,
-        DateUtil.formatLine(time),
-        time.getYear,
-        time.getMonth.getValue,
-        time.getDayOfMonth
+        time
       )
     }
 
@@ -159,10 +155,7 @@ object DataClean {
           "cms_id",
           "traffic",
           "ip",
-          "time",
-          "year",
-          "month",
-          "day"
+          "time"
         ),
         AbstractSingleOperationMapper.KuduOperation.INSERT
       )

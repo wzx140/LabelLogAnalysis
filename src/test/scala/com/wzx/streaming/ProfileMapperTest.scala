@@ -44,10 +44,7 @@ class ProfileMapperTest extends FunSuite with BeforeAndAfter with Matchers {
         5915,
         54,
         "113.140.11.123",
-        "2016-11-10 00:01:02",
-        2016,
-        11,
-        10
+        "2016-11-10 00:01:02"
       ),
       100
     )
@@ -58,10 +55,7 @@ class ProfileMapperTest extends FunSuite with BeforeAndAfter with Matchers {
         75,
         2152,
         "113.140.11.123",
-        "2016-11-10 00:01:02",
-        2016,
-        11,
-        10
+        "2016-11-10 00:01:02"
       ),
       101
     )
@@ -72,10 +66,7 @@ class ProfileMapperTest extends FunSuite with BeforeAndAfter with Matchers {
         175,
         7228,
         "58.241.76.18",
-        "2016-11-10 00:01:02",
-        2016,
-        11,
-        10
+        "2016-11-10 00:01:02"
       ),
       102
     )
@@ -86,10 +77,7 @@ class ProfileMapperTest extends FunSuite with BeforeAndAfter with Matchers {
         11325,
         271,
         "199.30.25.88",
-        "2016-11-10 00:01:03",
-        2016,
-        11,
-        10
+        "2016-11-10 00:01:03"
       ),
       103
     )
