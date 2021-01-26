@@ -3,7 +3,7 @@ package com.wzx.extracting
 import com.typesafe.config.ConfigFactory
 import com.wzx.common.{FilePath, TableName}
 import com.wzx.entity.Event
-import com.wzx.util.{DateUtil, OptionUtil, SparkUtil}
+import com.wzx.util.{DateUtil, OptionUtil, TransformUtil}
 import org.apache.kudu.spark.kudu.KuduContext
 import org.apache.spark.sql.{Dataset, SparkSession}
 import org.slf4j.LoggerFactory
@@ -49,7 +49,7 @@ object VideoVisitOver100 {
       config.getString("wzx.db.kudu.master_url"),
       spark.sqlContext.sparkContext
     )
-    val eventKuduDS = SparkUtil.rdd2EventDS(
+    val eventKuduDS = TransformUtil.rdd2EventDS(
       kuduContext
         .kuduRDD(spark.sparkContext, TableName.EVENT_WOS),
       spark

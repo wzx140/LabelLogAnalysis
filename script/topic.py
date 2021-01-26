@@ -17,5 +17,6 @@ elif command == 'create':
         f"kafka-topics --create --zookeeper {zookeeper_list} --replication-factor 1 --partitions 2 --topic weblogs")
 elif command == 'delete':
     os.system(f"kafka-topics --zookeeper {zookeeper_list} --delete --topic weblogs")
+    os.system(f'zookeeper-client -server {zookeeper_list} deleteall /brokers/topics/weblogs')
 elif command == 'console':
     os.system(f"kafka-console-consumer --bootstrap-server {broker_list} --topic weblogs")

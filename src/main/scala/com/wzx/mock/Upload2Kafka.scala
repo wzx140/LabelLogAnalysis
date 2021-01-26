@@ -1,11 +1,7 @@
 package com.wzx.mock
 
 import com.typesafe.config.ConfigFactory
-import org.apache.kafka.clients.producer.{
-  KafkaProducer,
-  Producer,
-  ProducerRecord
-}
+import org.apache.kafka.clients.producer.{KafkaProducer, Producer, ProducerRecord}
 import org.slf4j.LoggerFactory
 import scala.io.Source
 import java.util.Properties
@@ -42,19 +38,20 @@ object Upload2Kafka {
     val source = Source.fromFile(path)
     for (line <- source.getLines()) {
       val data = new ProducerRecord[String, String](topicName, null, line)
-      producer.send(data)
+      val res = producer.send(data).get()
       log.debug(s"send log: $data")
+      log.debug(res.toString)
       Thread.sleep(delay * 1000)
     }
   }
 
   def main(args: Array[String]): Unit = {
-    val delay = args.headOption.map(_.toInt).getOrElse(2)
-    val dataPath = args.lift(1).getOrElse("~/data/weblogs")
+    val delay = args.headOption.map(_.toInt).getOrElse(1)
+    val dataPath = args.lift(1).getOrElse("/home/wzx/data/weblogs")
     val topic = config.getString("wzx.topic.weblogs.name")
-    log.info(s"delay=$delay s")
-    log.info(s"data path =$dataPath")
-    log.info(s"topic =$topic")
+    log.info(s"delay= ${delay}s")
+    log.info(s"data path = $dataPath")
+    log.info(s"topic = $topic")
 
     val producer = initProducer()
     mock2kafka(producer, topic, dataPath, delay)

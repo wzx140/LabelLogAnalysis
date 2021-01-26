@@ -3,13 +3,14 @@ package com.wzx.streaming
 import com.typesafe.config.ConfigFactory
 import com.wzx.common.{Constant, FilePath, TableName}
 import com.wzx.entity.{Event, Profile}
+import com.wzx.util.TransformUtil
 import io.lemonlabs.uri.Url
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.connectors.kudu.connector.KuduTableInfo
 import org.apache.flink.connectors.kudu.connector.writer.{
   AbstractSingleOperationMapper,
   KuduWriterConfig,
-  PojoOperationMapper
+  RowOperationMapper
 }
 import org.apache.flink.connectors.kudu.streaming.KuduSink
 import org.apache.flink.runtime.state.filesystem.FsStateBackend
@@ -17,6 +18,7 @@ import org.apache.flink.streaming.api.CheckpointingMode
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.slf4j.LoggerFactory
+
 import java.util.Properties
 
 object DataClean {
@@ -27,14 +29,14 @@ object DataClean {
   private def initProducer() = {
     val brokers = config.getString("wzx.topic.weblogs.brokers")
     val topic = config.getString("wzx.topic.weblogs.name")
-    log.info(s"topic =$topic")
+    log.info(s"topic = $topic")
     val props = new Properties()
     props.setProperty("bootstrap.servers", brokers)
     props.setProperty("group.id", name)
-    log.info(s"props: $props")
+    log.info(s"props = $props")
 
     new FlinkKafkaConsumer[String](
-      "topic",
+      topic,
       new SimpleStringSchema(),
       props
     )
@@ -142,13 +144,12 @@ object DataClean {
 
   private def eventSink(stream: DataStream[Event]) = {
     val writerConfig = KuduWriterConfig.Builder
-      .setMasters(config.getString("db.kudu.master_url"))
+      .setMasters(config.getString("wzx.db.kudu.master_url"))
       .build
-    val sink = new KuduSink[Event](
+    val sink = new KuduSink(
       writerConfig,
       KuduTableInfo.forTable(TableName.EVENT_WOS),
-      new PojoOperationMapper[Event](
-        classOf[Event],
+      new RowOperationMapper(
         Array[String](
           "url",
           "cms_type",
@@ -160,30 +161,35 @@ object DataClean {
         AbstractSingleOperationMapper.KuduOperation.INSERT
       )
     )
-    stream.addSink(sink)
+    TransformUtil
+      .event2Row(stream)
+      .addSink(sink)
+      .name("event sink")
   }
 
   private def profileSink(stream: DataStream[Profile]) = {
     val writerConfig = KuduWriterConfig.Builder
-      .setMasters(config.getString("db.kudu.master_url"))
+      .setMasters(config.getString("wzx.db.kudu.master_url"))
       .build
-    val sink = new KuduSink[Profile](
+    val sink = new KuduSink(
       writerConfig,
-      KuduTableInfo.forTable(TableName.EVENT_WOS),
-      new PojoOperationMapper[Profile](
-        classOf[Profile],
+      KuduTableInfo.forTable(TableName.PROFILE_WOS),
+      new RowOperationMapper(
         Array[String]("ip", "city", "register_day"),
         AbstractSingleOperationMapper.KuduOperation.INSERT
       ),
       new LogFailureHandler(log)
     )
-    stream.addSink(sink)
+    TransformUtil
+      .profile2Row(stream)
+      .addSink(sink)
+      .name("profile sink")
   }
 
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
     env.setStateBackend(
-      new FsStateBackend(FilePath.PROFILE_BACKEND_PATH)
+      new FsStateBackend(FilePath.STATE_BACKEND_PATH)
     )
     env.enableCheckpointing(5000, CheckpointingMode.EXACTLY_ONCE)
     val producer = initProducer()

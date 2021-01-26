@@ -1,25 +1,17 @@
-## 环境搭建
-1. 安装CDH Manager，参考[官方教程](https://docs.cloudera.com/documentation/enterprise/6/6.0/topics/installation.html)
-2. 在CDH中添加Flink, HDFS, Hive, Kafka, Kudu, Spark, YARN, ZooKeeper
-   - HDFS注意关闭权限检查
-3. 编译zeppelin与livy的parcels和csd，参考[livy_zeppelin_cdh_csd_parcels](https://github.com/alexjbush/livy_zeppelin_cdh_csd_parcels)
-4. zeppelin与livy与CDH集成，参考[博客](https://www.itocm.com/a/3C84D18AE81B46BC80CF4AB64C8159F6)
-5. [编译Flink Kudu Connector](https://github.com/apache/bahir-flink)
-6. `pip install python-crontab`
-7. `python -m script deploy slave1 slave2`
+# 基于标签的用户日志分析系统
 
 ## 架构
-- 实时etl: mock -> kafka -> flink -> kudu
-  - event
-  - profile
-- 离线标签: crontab -> spark -> hive
-  - 近一周新注册
-  - 当天video访问量超过100
-- kudu sink: crontab -> impala sql -> hive
-- olap分析: impala -> hive, kudu
-  - 查看notebook
-  
-- 数据表: 见[impala.sql](sql/impala.sql)
+- 实时etl: mock Kafka uploader -> Kafka -> Flink -> Kudu。实时处理日志数据流，生成事件和用户属性
+  - event: 用户事件
+  - profile: 用户属性
+- 离线标签: Crontab -> Spark -> Parquet。每天凌晨自动跑的两个离线任务，生成对应用户标签
+  - 近一周新注册的用户
+  - 当天video访问量超过100的用户
+- 滑动窗口: Crontab -> Impala SQL。存储分层，三个任务每个月执行一次
+  - 数据移动: [kudu -> parquet](sql/window_data_move.sql)
+  - 分区移动: [drop and add kudu range partition](sql/window_partition_shift.sql)
+  - 视图移动: [alter kudu view](sql/window_view_alter.sql)
+- [数据表结构](sql/impala.sql)
 
 ## 滑动窗口模式
 ### 技术选型
@@ -38,14 +30,15 @@
 - Boundary: 滑动窗口的边界
 - VIEW: Kudu和HDFS的统一视图
 
-
-## 日志格式
+## 日志
+原始日志只有一天的数据量，格式如下
 ```
 60.165.39.1 - - [10/Nov/2016:00:01:53 +0800] "POST /course/ajaxmediauser HTTP/1.1" 200 54 "www.imooc.com" "http://www.imooc.com/code/1431" mid=1431&time=60 "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.122 Safari/537.36 SE 2.X MetaSr 1.0" "-" 10.100.136.64:80 200 0.014 0.014
 14.145.74.175 - - [10/Nov/2016:00:01:53 +0800] "POST /course/ajaxmediauser/ HTTP/1.1" 200 54 "www.imooc.com" "http://www.imooc.com/video/678" mid=678&time=60&learn_time=551.5 "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36" "-" 10.100.136.64:80 200 0.014 0.014
 ```
+链接: https://pan.baidu.com/s/169yznx9QOyMQcOoEL55f2Q  密码: 47vc
 
-百度云盘下载地址：https://pan.baidu.com/s/1VfOG14mGW4P4kj20nzKx8g 提取码：uwjg
+`create_dataset.py`会根据集群数量自动切分原始日志，并将时间修改为近两个月的均匀分布
 
 ## 集群配置
 - master
@@ -75,7 +68,23 @@
     - Kudu Tablet Server
     - ZooKeeper Server
     - Impala Daemon
-  
+
+## 部署
+1. 安装CDH Manager，参考[官方教程](https://docs.cloudera.com/documentation/enterprise/6/6.0/topics/installation.html)
+2. 在CDH中添加Flink, HDFS, Hive, Kafka, Kudu, Spark, YARN, ZooKeeper, Hue; HDFS注意关闭权限检查
+3. [编译Flink Kudu Connector](https://github.com/apache/bahir-flink)
+4. `pip3 install python-crontab`
+5. 下载[日志](#日志)
+6. `python3 script/deploy.py path_of_log slave1 slave2`
+    - 根据原始日志进行时间更改和切分，并上传到本机和指定的host
+    - 编译jar包并上传HDFS
+    - 创建Kafka topic
+    - 创建Impala数据表
+    - 创建crontab离线sql作业
+    - 提交实时Flink作业
+    - 创建crontab离线Spark作业
+    - 本机和指定的host，开启Mock Kafka Uploader
+ 
 ## 参考
 1. [mooc日志分析系统](https://github.com/whirlys/BigData-In-Practice/tree/master/ImoocLogAnalysis)
 2. [使用Apache Kudu和Impala实现存储分层](https://my.oschina.net/dabird/blog/3051625)
