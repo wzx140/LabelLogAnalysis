@@ -7,7 +7,6 @@ import org.apache.flink.streaming.api.operators.StreamFlatMap
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
-
 import collection.JavaConverters._
 
 class ProfileMapperTest extends FunSuite with BeforeAndAfter with Matchers {
@@ -103,7 +102,7 @@ class ProfileMapperTest extends FunSuite with BeforeAndAfter with Matchers {
     array should contain(
       Profile(
         "199.30.25.88",
-        "全球",
+        "",
         "2016-11-10"
       )
     )

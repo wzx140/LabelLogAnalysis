@@ -1,14 +1,9 @@
 package com.wzx.streaming
 
-import com.ggstar.util.ip.IpHelper
 import com.wzx.entity.{Event, Profile}
-import com.wzx.util.DateUtil
+import com.wzx.util.{DateUtil, IpUtil}
 import org.apache.flink.api.common.functions.RichFlatMapFunction
-import org.apache.flink.api.common.state.{
-  MapState,
-  MapStateDescriptor,
-  StateTtlConfig
-}
+import org.apache.flink.api.common.state.{MapState, MapStateDescriptor, StateTtlConfig}
 import org.apache.flink.api.common.time.Time
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
@@ -43,9 +38,10 @@ class ProfileMapper extends RichFlatMapFunction[Event, Profile] {
     if (!state.contains(value.ip)) {
       state.put(value.ip, false)
       // parse ip
-      val city = IpHelper.findRegionByIp(value.ip)
+      val city = IpUtil.getCity(value.ip)
       val day = DateUtil.formatDay(DateUtil.parseLineFormat(value.time))
-      out.collect(Profile(value.ip, city, day))
+      val profile = Profile(value.ip, city, day)
+      out.collect(profile)
     }
   }
 }

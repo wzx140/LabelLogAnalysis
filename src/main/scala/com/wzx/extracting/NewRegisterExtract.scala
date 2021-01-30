@@ -4,8 +4,7 @@ import com.typesafe.config.ConfigFactory
 import com.wzx.common.{FilePath, TableName}
 import com.wzx.entity.Profile
 import com.wzx.util.{DateUtil, OptionUtil}
-import org.apache.kudu.spark.kudu.KuduContext
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.{Dataset, SaveMode, SparkSession}
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 
@@ -40,25 +39,23 @@ object NewRegisterExtract {
     log.info(DateUtil.formatLine(beforeDate))
 
     // 读取kudu中的数据
-    val kuduContext = new KuduContext(
-      config.getString("wzx.db.kudu.master_url"),
-      spark.sqlContext.sparkContext
-    )
     import spark.implicits._
-    val profileDS = kuduContext
-      .kuduRDD(spark.sparkContext, TableName.PROFILE_WOS)
-      .map {
-        case Row(ip: String, city: String, register_day: String) =>
-          Profile(ip, city, register_day)
-      }
-      .toDS()
+    val profileDS = spark.read
+      .option("kudu.master", config.getString("wzx.db.kudu.master_url"))
+      .option("kudu.table", TableName.PROFILE_WOS)
+      .format("kudu")
+      .load()
+      .as[Profile]
 
     val outDS = extract(profileDS, beforeDate)
     // 写入parquet
-    outDS.write.parquet(
-      DateUtil
-        .formatDateString(FilePath.USER_TAG_2_ROS_PARQUET, date)
-    )
+    val outputPath = DateUtil
+      .formatDateString(FilePath.USER_TAG_2_ROS_PARQUET, date)
+    outDS.write
+      .mode(SaveMode.Overwrite)
+      .parquet(
+        outputPath
+      )
 
     spark.close()
   }

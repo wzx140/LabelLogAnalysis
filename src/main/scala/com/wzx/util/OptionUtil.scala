@@ -4,8 +4,10 @@ import java.time.LocalDateTime
 
 object OptionUtil {
 
+  /**
+   * 解析命令行参数时间及其前一天, 默认为当前时间
+   */
   def getTime(args: Array[String]): (LocalDateTime, LocalDateTime) = {
-    // 解析日期
     val date = DateUtil.parseDayFormat(
       args.headOption
         .getOrElse(DateUtil.formatDay(LocalDateTime.now()))

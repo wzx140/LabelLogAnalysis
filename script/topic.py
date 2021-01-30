@@ -3,20 +3,21 @@
 
 import os
 import sys
-from functools import reduce
+from pyhocon import ConfigFactory
 
-command = sys.argv[1] if len(sys.argv) > 1 else None
-hosts = sys.argv[2:] if len(sys.argv) > 2 else None
-zookeeper_list = reduce(lambda s1, s2: s1 + s2, map(lambda s: s + ':2181,', hosts))[:-1]
-broker_list = reduce(lambda s1, s2: s1 + s2, map(lambda s: s + ':9092,', hosts))[:-1]
+command = sys.argv[1]
+conf = ConfigFactory.parse_file('application.conf')
+zookeeper_list = conf['wzx.zoo.servers']
+broker_list = conf['wzx.topic.weblogs.brokers']
+topic_name = conf['wzx.topic.weblogs.name']
 
 if command == 'describe':
     os.system(f"kafka-topics --zookeeper {zookeeper_list} --describe")
 elif command == 'create':
     os.system(
-        f"kafka-topics --create --zookeeper {zookeeper_list} --replication-factor 1 --partitions 2 --topic weblogs")
+        f"kafka-topics --create --zookeeper {zookeeper_list} --replication-factor 1 --partitions 2 --topic {topic_name}")
 elif command == 'delete':
-    os.system(f"kafka-topics --zookeeper {zookeeper_list} --delete --topic weblogs")
-    os.system(f'zookeeper-client -server {zookeeper_list} deleteall /brokers/topics/weblogs')
+    os.system(f"kafka-topics --zookeeper {zookeeper_list} --delete --topic {topic_name}")
+    os.system(f'zookeeper-client -server {zookeeper_list} deleteall /brokers/topics/{topic_name}')
 elif command == 'console':
-    os.system(f"kafka-console-consumer --bootstrap-server {broker_list} --topic weblogs")
+    os.system(f"kafka-console-consumer --bootstrap-server {broker_list} --topic {topic_name}")

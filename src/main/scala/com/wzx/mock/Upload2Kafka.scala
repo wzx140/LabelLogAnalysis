@@ -33,20 +33,19 @@ object Upload2Kafka {
       producer: Producer[String, String],
       topicName: String,
       path: String,
-      delay: Int
+      delay: Float
   ): Unit = {
     val source = Source.fromFile(path)
     for (line <- source.getLines()) {
       val data = new ProducerRecord[String, String](topicName, null, line)
       val res = producer.send(data).get()
-      log.debug(s"send log: $data")
-      log.debug(res.toString)
-      Thread.sleep(delay * 1000)
+      log.debug(s"send log: $data; res: $res")
+      Thread.sleep((delay * 1000).toInt)
     }
   }
 
   def main(args: Array[String]): Unit = {
-    val delay = args.headOption.map(_.toInt).getOrElse(1)
+    val delay = args.headOption.map(_.toFloat).getOrElse(1f)
     val dataPath = args.lift(1).getOrElse("/home/wzx/data/weblogs")
     val topic = config.getString("wzx.topic.weblogs.name")
     log.info(s"delay= ${delay}s")

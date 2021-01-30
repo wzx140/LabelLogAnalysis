@@ -6,9 +6,9 @@ case class Event(
     // 访问类型
     cms_type: String,
     // 访问类型对应的编号
-    cms_id: Long,
+    cms_id: Int,
     // 流量
-    traffic: Long,
+    traffic: Int,
     // 用户ip
     ip: String,
     // yyyy-MM-dd HH:mm:ss

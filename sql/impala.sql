@@ -11,19 +11,19 @@ DROP VIEW IF EXISTS `event_external_view`;
 CREATE TABLE `event_wos`
 (
     `ip`       STRING COMMENT '用户ip',
-    `time`     TIMESTAMP COMMENT 'yyyy-MM-dd HH:mm:ss',
+    `time`     STRING COMMENT 'yyyy-MM-dd HH:mm:ss',
     `url`      STRING COMMENT '访问url',
     `cms_type` STRING COMMENT '访问类型',
-    `cms_id`   BIGINT COMMENT '访问类型对应的编号',
-    `traffic`  BIGINT COMMENT '流量',
+    `cms_id`   INT COMMENT '访问类型对应的编号',
+    `traffic`  INT COMMENT '流量',
     PRIMARY KEY (`ip`, `time`)
 )
 PARTITION BY
     HASH(`ip`) PARTITIONS 2,
 RANGE(`time`) (
-    PARTITION "${var:cur_month}" <= VALUES < MONTHS_ADD("${var:cur_month}", 1),
+    PARTITION "${var:cur_month}" <= VALUES < CAST(MONTHS_ADD("${var:cur_month}", 1) AS STRING),
     -- 缓冲区
-    PARTITION MONTHS_ADD("${var:cur_month}", 1)  <= VALUES < MONTHS_ADD("${var:cur_month}", 2)
+    PARTITION CAST(MONTHS_ADD("${var:cur_month}", 1) AS STRING) <= VALUES < CAST(MONTHS_ADD("${var:cur_month}", 2) AS STRING)
 )
 STORED AS KUDU;
 
@@ -31,7 +31,7 @@ CREATE TABLE `profile_wos`
 (
     `ip`           STRING COMMENT '用户ip',
     `city`         STRING COMMENT '用户城市',
-    `register_day` TIMESTAMP COMMENT '注册日期',
+    `register_day` STRING COMMENT '注册日期',
     PRIMARY KEY (`ip`)
 )
 PARTITION BY
@@ -42,10 +42,10 @@ CREATE TABLE `event_ros`
 (
     `url`      STRING COMMENT '访问url',
     `cms_type` STRING COMMENT '访问类型',
-    `cms_id`   BIGINT COMMENT '访问类型对应的编号',
-    `traffic`  BIGINT COMMENT '流量',
+    `cms_id`   INT COMMENT '访问类型对应的编号',
+    `traffic`  INT COMMENT '流量',
     `ip`       STRING COMMENT '用户ip',
-    `time`     TIMESTAMP COMMENT 'yyyy-MM-dd HH:mm:ss'
+    `time`     STRING COMMENT 'yyyy-MM-dd HH:mm:ss'
 )
 PARTITIONED BY(
     `year`     SMALLINT COMMENT 'yyyy',

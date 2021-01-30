@@ -2,8 +2,8 @@
 
 ALTER TABLE `event_wos`
 DROP IF EXISTS RANGE
-PARTITION MONTHS_SUB("${var:cur_month}", 1) <= VALUES < "${var:cur_month}";
+PARTITION CAST(MONTHS_SUB("${var:cur_month}", 1) AS STRING) <= VALUES < "${var:cur_month}";
 
 ALTER TABLE `event_wos`
 ADD IF NOT EXISTS RANGE
-PARTITION MONTHS_ADD("${var:cur_month}", 1) <= VALUES < MONTHS_ADD("${var:cur_month}", 2);
+PARTITION CAST(MONTHS_ADD("${var:cur_month}", 1) AS STRING) <= VALUES < CAST(MONTHS_ADD("${var:cur_month}", 2) AS STRING);

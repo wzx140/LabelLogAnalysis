@@ -4,13 +4,14 @@
 - 实时etl: mock Kafka uploader -> Kafka -> Flink -> Kudu。实时处理日志数据流，生成事件和用户属性
   - event: 用户事件
   - profile: 用户属性
-- 离线标签: Crontab -> Spark -> Parquet。每天凌晨自动跑的两个离线任务，生成对应用户标签
+- 离线标签: (Parquet, Kudu) -> Spark -> Parquet。每天凌晨自动跑的两个离线任务，生成对应用户标签
   - 近一周新注册的用户
-  - 当天video访问量超过100的用户
-- 滑动窗口: Crontab -> Impala SQL。存储分层，三个任务每个月执行一次
+  - 今年来video访问量超过100的用户
+- 滑动窗口: Impala SQL。存储分层，三个任务每个月执行一次
   - 数据移动: [kudu -> parquet](sql/window_data_move.sql)
-  - 分区移动: [drop and add kudu range partition](sql/window_partition_shift.sql)
+  - 分区移动: [alter kudu range partition](sql/window_partition_shift.sql)
   - 视图移动: [alter kudu view](sql/window_view_alter.sql)
+- OLAP: (Parquet, Kudu) -> Impala -> Hue
 - [数据表结构](sql/impala.sql)
 
 ## 滑动窗口模式
@@ -70,21 +71,38 @@
     - Impala Daemon
 
 ## 部署
+首先修改`src/main/resources/application.conf`里的配置
+
+以下脚本可以在开发机上使用
+- `script/deploy.py`: 部署工程到集群`wzx.deploy.cluster`
+- `script/create_dataset.py`: 根据原始日志进行时间更改和切分, 部署时被调用
+
+部署完成后, 以下脚本可以`wzx.deploy.master`上使用, 使用前cd到`wzx.deploy.data_path`下
+- `submit.py`: 提交spark或flink作业
+- `topic.py`: kafka的topic相关
+- `crontab.py`: 部署crontab定时任务
+
+开始部署
 1. 安装CDH Manager，参考[官方教程](https://docs.cloudera.com/documentation/enterprise/6/6.0/topics/installation.html)
-2. 在CDH中添加Flink, HDFS, Hive, Kafka, Kudu, Spark, YARN, ZooKeeper, Hue; HDFS注意关闭权限检查
-3. [编译Flink Kudu Connector](https://github.com/apache/bahir-flink)
-4. `pip3 install python-crontab`
-5. 下载[日志](#日志)
-6. `python3 script/deploy.py path_of_log slave1 slave2`
-    - 根据原始日志进行时间更改和切分，并上传到本机和指定的host
-    - 编译jar包并上传HDFS
+2. 在CDH中添加Flink, HDFS, Hive, Kafka, Kudu, Spark, YARN, ZooKeeper, Hue
+    - HDFS注意关闭权限检查
+    - 在CDH里配置YARN和Flink的系统用户为root, 以获得访问文件的权限
+    - 如果集群配置较低，增加kudu negotiation rpc timeout时间
+        - 在CDH的 "gflagfile的Kudu服务高级配置代码段" 增加 `--rpc_negotiation_timeout_ms=300000`
+        - 在CDH的 "gflagfile的Master高级配置代码段" 增加 `--rpc_negotiation_timeout_ms=300000`
+        - 在CDH的 "gflagfile的TabletServer高级配置代码段" 增加 `--rpc_negotiation_timeout_ms=300000`
+3. 在开发机和`wzx.deploy.master`机器上安装`pyhocon`。`pip3 install pyhocon`
+4. 下载[日志](#日志)
+5. 在开发机上运行`python3 script/deploy.py path_of_log`, 将完成以下工作
+    - 调用`script/create_dataset.py`根据原始日志进行时间更改和切分并上传到集群
+    - 编译jar包并上传到集群
     - 创建Kafka topic
     - 创建Impala数据表
-    - 创建crontab离线sql作业
-    - 提交实时Flink作业
-    - 创建crontab离线Spark作业
-    - 本机和指定的host，开启Mock Kafka Uploader
- 
+    - 创建crontab离线sql作业和Spark作业
+    - 提交实时Flink作业 
+6. 在集群上开启Mock Kafka Uploader
+    - 在`wzx.deploy.cluster`机器上的`wzx.deploy.data_path`目录下执行`java -jar LabelLogAnalysis-1.0-SNAPSHOT-jar-with-dependencies.jar`
+
 ## 参考
 1. [mooc日志分析系统](https://github.com/whirlys/BigData-In-Practice/tree/master/ImoocLogAnalysis)
 2. [使用Apache Kudu和Impala实现存储分层](https://my.oschina.net/dabird/blog/3051625)

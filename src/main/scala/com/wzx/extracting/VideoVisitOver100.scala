@@ -3,13 +3,12 @@ package com.wzx.extracting
 import com.typesafe.config.ConfigFactory
 import com.wzx.common.{FilePath, TableName}
 import com.wzx.entity.Event
-import com.wzx.util.{DateUtil, OptionUtil, TransformUtil}
-import org.apache.kudu.spark.kudu.KuduContext
-import org.apache.spark.sql.{Dataset, SparkSession}
+import com.wzx.util.{DateUtil, OptionUtil}
+import org.apache.spark.sql.{Dataset, SaveMode, SparkSession}
 import org.slf4j.LoggerFactory
 
 /**
-  * 当日video访问量超过100
+  * 今年来video访问量超过100
   */
 object VideoVisitOver100 {
 
@@ -39,27 +38,31 @@ object VideoVisitOver100 {
 
     // 读取parquet中的数据
     import spark.implicits._
-    val dataPath =
-      DateUtil.formatDateString(FilePath.EVENT_ROS_PARQUET, beforeDate)
+    spark.conf.set("spark.sql.parquet.binaryAsString", "true")
     val eventParquetDS = spark.read
-      .parquet(dataPath)
+      .option("spark.sql.parquet.binaryAsString", "true")
+      .parquet(FilePath.EVENT_ROS_PARQUET)
+      .filter($"year" === date.getYear)
+      .select($"ip", $"time", $"url", $"cms_type", $"cms_id", $"traffic")
       .as[Event]
     // 读取kudu中的数据
-    val kuduContext = new KuduContext(
-      config.getString("wzx.db.kudu.master_url"),
-      spark.sqlContext.sparkContext
-    )
-    val eventKuduDS = TransformUtil.rdd2EventDS(
-      kuduContext
-        .kuduRDD(spark.sparkContext, TableName.EVENT_WOS),
-      spark
-    )
+    val eventKuduDS = spark.read
+      .option("kudu.master", config.getString("wzx.db.kudu.master_url"))
+      .option("kudu.table", TableName.EVENT_WOS)
+      .format("kudu")
+      .load()
+      .as[Event]
+      .filter($"time" < DateUtil.formatLine(date))
 
     val outDS = extract(eventParquetDS.union(eventKuduDS))
     // 写入parquet
-    outDS.write.parquet(
-      DateUtil.formatDateString(FilePath.USER_TAG_1_ROS_PARQUET, date)
-    )
+    val outputPath = DateUtil
+      .formatDateString(FilePath.USER_TAG_1_ROS_PARQUET, date)
+    outDS.write
+      .mode(SaveMode.Overwrite)
+      .parquet(
+        outputPath
+      )
 
     spark.close()
   }
